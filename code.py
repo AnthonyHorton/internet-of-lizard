@@ -24,34 +24,39 @@ print("MagTag initialised")
 _ = magtag.peripherals.battery  # First reading after reset/wake seems to be no good, read & throw away.
 
 # Set up the text locations on the e-ink display.
-magtag.add_text(text_position = (int(0.16 * magtag.graphics.display.width) - 1,
-                                 int(0.2 * magtag.graphics.display.height) - 1),
-                text_scale=3,
-                text_anchor_point=(0.5, 0.5))
-magtag.add_text(text_position = (int(0.16 * magtag.graphics.display.width) - 1,
-                                 int(0.6 * magtag.graphics.display.height) - 1),
-                text_scale=3,
-                text_anchor_point=(0.5, 0.5))
-magtag.add_text(text_position = (int(0.51 * magtag.graphics.display.width) - 1,
-                                 int(0.2 * magtag.graphics.display.height) - 1),
-                text_scale=3,
-                text_anchor_point=(0.5, 0.5))
-magtag.add_text(text_position = (int(0.51 * magtag.graphics.display.width) - 1,
-                                 int(0.6 * magtag.graphics.display.height) - 1),
-                text_scale=3,
-                text_anchor_point=(0.5, 0.5))
-magtag.add_text(text_position = (int(0.86 * magtag.graphics.display.width) - 1,
-                                 int(0.2 * magtag.graphics.display.height) - 1),
-                text_scale=3,
-                text_anchor_point=(0.5, 0.5))
-magtag.add_text(text_position = (int(0.86 * magtag.graphics.display.width) - 1,
-                                 int(0.6 * magtag.graphics.display.height) - 1),
-                text_scale=3,
-                text_anchor_point=(0.5, 0.5))
-magtag.add_text(text_position = (int(0.5 * magtag.graphics.display.width) - 1,
-                                 int(0.9 * magtag.graphics.display.height) - 1),
+magtag.add_text(text_position = (1, 20),
                 text_scale=1,
-                text_anchor_point=(0.5, 0.5))
+                text_anchor_point=(0.0, 0.0),
+                text_font="FiraCode-SemiBold-30.pcf")
+magtag.add_text(text_position = (1, 70),
+                text_scale=1,
+                text_anchor_point=(0.0, 0.0),
+                text_font="FiraCode-SemiBold-30.pcf")
+magtag.add_text(text_position = (int(0.5 * magtag.graphics.display.width - 1),
+                                 20),
+                text_scale=1,
+                text_anchor_point=(0.5, 0.0),
+                text_font="FiraCode-SemiBold-30.pcf")
+magtag.add_text(text_position = (int(0.5 * magtag.graphics.display.width - 1),
+                                 70),
+                text_scale=1,
+                text_anchor_point=(0.5, 0.0),
+                text_font="FiraCode-SemiBold-30.pcf")
+magtag.add_text(text_position = (magtag.graphics.display.width - 2,
+                                 20),
+                text_scale=1,
+                text_anchor_point=(1.0, 0.0),
+                text_font="FiraCode-SemiBold-30.pcf")
+magtag.add_text(text_position = (magtag.graphics.display.width - 2,
+                                 70),
+                text_scale=1,
+                text_anchor_point=(1.0, 0.0),
+                text_font="FiraCode-SemiBold-30.pcf")
+magtag.add_text(text_position = (int(0.5 * magtag.graphics.display.width) - 1,
+                                 magtag.graphics.display.height - 1),
+                text_scale=1,
+                text_anchor_point=(0.5, 1.0),
+                text_font="FiraCode-Regular-10.pcf")
 
 # Connect to WiFi
 try:
@@ -160,10 +165,10 @@ else:
                     index=0, auto_refresh=False)    
 
 if humidity_cool:
-    magtag.set_text("{:2.0f}%".format(humidity_cool),
+    magtag.set_text("{:3.0f}% ".format(humidity_cool),
                     index=1, auto_refresh=False)
 else:
-    magtag.set_text("--%",
+    magtag.set_text(" --% ",
                     index=1, auto_refresh=False)   
 
 if temperature_warm:
@@ -174,10 +179,10 @@ else:
                     index=2, auto_refresh=False)
 
 if humidity_warm:
-    magtag.set_text("{:2.0f}%".format(humidity_warm),
+    magtag.set_text("{:3.0f}% ".format(humidity_warm),
                     index=3, auto_refresh=False)
 else:
-    magtag.set_text("--%",
+    magtag.set_text(" --% ",
                     index=3, auto_refresh=False)
 
 if temperature_basking:
@@ -187,7 +192,7 @@ else:
     magtag.set_text("--.-C",
                     index=4, auto_refresh=False)
 
-magtag.set_text("-.-",
+magtag.set_text(" -.- ",
                 index=5, auto_refresh=False)
 
 if local_time:
