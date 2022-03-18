@@ -60,7 +60,6 @@ try:
 except Exception as err:
     # WiFi is down! Panic, sleep, then try again.
     print("Error connecting to WiFi:\n{}".format(err))
-    sleep_time = 300 - (time.monotonic() - start)
     sleep_time()  # Go back to sleep
 
 # Initialise I2C, the multiplexer, & two multiplexer channels.
