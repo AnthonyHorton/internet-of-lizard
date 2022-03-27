@@ -14,21 +14,33 @@ status_font = "NasalizationRg-Regular-15.pcf"
 first_row = 20
 second_row = 65
 
+
 class GUVAS12SD:
+    """
+    Interface for Adafruit GUVA-S12SD UV sensor breakout board.
+
+    From breakout product page (https://www.adafruit.com/product/1918) op-amp voltage =
+    4.3 * photodiode current V/uA, & UV index = voltage / 0.1V, i.e 0.043 * current / nA.
+
+    From sensor datasheet (https://cdn-shop.adafruit.com/datasheets/1918guva.pdf)
+    photodiode current = ~(20.92 * UVI + 78.29) nA
+
+    Experiment suggests a different zero point, 6.74 nA instead of 20.92 nA.
+    """
     def __init__(self, pin):
         self._input = AnalogIn(pin)
-    
+
     @property
     def voltage(self):
-        return self._input.value * 3.3 / 65536  # Voltage from op-amp.
-        
+        return self._input.value * 3.3 / 65535.0  # Voltage from op-amp.
+
     @property
     def current(self):
-        return self.voltage / 4.3  # Photodiode current in uA.
-        
+        return self.voltage / 0.0043  # Photodiode current in nA.
+
     @property
     def uv_index(self):
-        return self.voltage * 10.0  # Approximate UV index.
+        return 0.0478 * (self.current - 6.74)  # Approximate UV index.
 
 
 def percentage(voltage):
@@ -160,8 +172,8 @@ if sht_warm:
     temperature_warm = sht_warm.temperature
     humidity_warm = sht_warm.relative_humidity
 else:
-    temperature_cool = None
-    humidity_cool = None
+    temperature_warm = None
+    humidity_warm = None
 
 if mlx:
     temperature_basking = mlx.object_temperature
@@ -203,14 +215,14 @@ if temperature_cool:
                     index=0, auto_refresh=False)
 else:
     magtag.set_text("--.-C",
-                    index=0, auto_refresh=False)    
+                    index=0, auto_refresh=False)
 
 if humidity_cool:
     magtag.set_text("{:2.0f}%".format(humidity_cool),
                     index=1, auto_refresh=False)
 else:
     magtag.set_text("--%",
-                    index=1, auto_refresh=False)   
+                    index=1, auto_refresh=False)
 
 if temperature_warm:
     magtag.set_text("{:4.1f}C".format(temperature_warm),
@@ -234,10 +246,10 @@ else:
                     index=4, auto_refresh=False)
 
 if uv_index is not None:
-    magtag.set_text("{:3.1f}".format(uv_index),
+    magtag.set_text("{:4.2f}".format(uv_index),
                     index=5, auto_refresh=False)
 else:
-    magtag.set_text("-.-",
+    magtag.set_text("-.--",
                     index=5, auto_refresh=False)
 
 if local_time:
