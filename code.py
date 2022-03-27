@@ -42,7 +42,7 @@ class GUVAS12SD:
 
     pin : int
         GPIO pin that the sensor breakout output is connected to, e.g. board.D10. If pin is set to
-        None then no input pin will be set up all all properties will return None.
+        None then no input pin will be set up all properties will return None.
     zero_point : float, optional
         photodiode dark current, i.e the current with no incident UV, in nanoamps. Default 6.74nA.
     nanoamps_per_index: float, optional
@@ -86,6 +86,7 @@ class GUVAS12SD:
         self.zero_point = zero_point
         self.nanoamps_per_index = nanoamps_per_index
         self.volts_per_nanoamp = volts_per_nanoamp
+        print("GUVA-S12SD initialised")
 
     @property
     def voltage(self):
@@ -106,7 +107,9 @@ class GUVAS12SD:
         if self._input is None:
             return None
         else:
-            return (self.current - self.zero_point) / self.nanoamps_per_index  # Approximate UV index.
+            uvi = (self.current - self.zero_point) / self.nanoamps_per_index  # Approximate UV index.
+            print("Read UV index: {}".format(uvi))
+            return uvi
 
 
 def percentage(voltage):
@@ -115,7 +118,9 @@ def percentage(voltage):
     Equation taken from https://electronics.stackexchange.com/questions/435837/calculate-battery-percentage-on-lipo-battery
 
     Seems to be really inaccurate for these low current draw situations."""
-    return 123.0 * (1 - 1 / (1 + (voltage / 3.7)**80)**0.165)
+    battery = 123.0 * (1 - 1 / (1 + (voltage / 3.7)**80)**0.165)
+    print("Read battery percentage: {}".format(battery))
+    return battery
 
 
 def setup_display(magtag):
@@ -140,7 +145,7 @@ def setup_display(magtag):
                     text_scale=1,
                     text_anchor_point=(0.5, 0.0),
                     text_font=SENSOR_FONT)
-    magtag.add_text(text_position=(int(SECOND_COLUMN * magtag.graphics.display.width),
+    magtag.add_text(text_position=(int(THIRD_COLUMN * magtag.graphics.display.width),
                                    FIRST_ROW_TOP),
                     text_scale=1,
                     text_anchor_point=(0.5, 0.0),
@@ -155,7 +160,7 @@ def setup_display(magtag):
                     text_scale=1,
                     text_anchor_point=(0.5, 1.0),
                     text_font=STATUS_FONT)
-    print("Display set up.")
+    print("Display set up")
 
 
 def connect_wifi(magtag):
@@ -186,7 +191,7 @@ def setup_mux(i2c, errors):
         return i2c_cool, i2c_warm
 
 
-def setup_i2c_sensor(sensor_class, i2c_bus, errors):
+def setup_i2c_sensor(sensor_class, sensor_name, i2c_bus, errors):
     """ Initialise one of the I2C connected sensors, returning None on error."""
     if i2c_bus is None:
         # This sensor uses the multipler and there was an error initialising that.
@@ -195,12 +200,12 @@ def setup_i2c_sensor(sensor_class, i2c_bus, errors):
         sensor = sensor_class(i2c_bus)
     except Exception as err:
         # Error initialising this sensor, try to continue without it.
-        msg = "Error initialising {}:\n{}".format(sensor_class.__name___, err)
+        msg = "Error initialising {}:\n{}".format(sensor_name, err)
         print(msg)
         errors += (msg + "\n")
         return None
     else:
-        print("{} initialised.".format(sensor_class.__name__))
+        print("{} initialised".format(sensor_name))
         return sensor
 
 
@@ -218,7 +223,7 @@ def get_local_time(magtag, errors):
         return local_time.split(".")[0]  # Trim off fractions of a second and timezone info
 
 
-def safe_read(sensor, attribute_name, errors):
+def safe_read(sensor, sensor_name, attribute_name, errors):
     """Reads I2C sensor while catching errors."""
     if sensor is None:
         # There was an error initialising the sensor, can't even try to read it.
@@ -227,12 +232,12 @@ def safe_read(sensor, attribute_name, errors):
         try:
             value = getattr(sensor, attribute_name)
         except Exception as err:
-            msg = "Error reading {}.{}:\n{}".format(sensor.__name__, attribute_name, err)
+            msg = "Error reading {}.{}:\n{}".format(sensor_name, attribute_name, err)
             print(msg)
             errors += (msg + "\n")
             return None
         else:
-            print("{}.{} returned {}".format(sensor.__name__, attribute_name, value))
+            print("{}.{} returned {}".format(sensor_name, attribute_name, value))
             return value
 
 
@@ -253,6 +258,7 @@ def push_to_io(sensor_readings, magtag, errors):
         magtag.push_to_io("jerry.errors", errors if errors else "None")
     except Exception as err:
         print("Error sending errors {} to Adafruit IO:\n{}".format(errors, err))
+    print("Sensor readings sent to Adafruit IO")
 
 
 def update_text(magtag, index, value, format_string, no_value_string, refresh=False):
@@ -282,19 +288,19 @@ try:
     # Initialise all the sensors.
     i2c = board.I2C()
     i2c_cool, i2c_warm = setup_mux(i2c, errors)
-    sht_cool = setup_i2c_sensor(adafruit_sht4x.SHT4x, i2c_cool, errors)
-    sht_warm = setup_i2c_sensor(adafruit_sht4x.SHT4x, i2c_warm, errors)
-    mlx = setup_i2c_sensor(adafruit_mlx90614.MLX90614, i2c, errors)
+    sht_cool = setup_i2c_sensor(adafruit_sht4x.SHT4x, "sht_cool", i2c_cool, errors)
+    sht_warm = setup_i2c_sensor(adafruit_sht4x.SHT4x, "sht_warm", i2c_warm, errors)
+    mlx = setup_i2c_sensor(adafruit_mlx90614.MLX90614, "mlx", i2c, errors)
     guva = GUVAS12SD(UV_PIN)
 
     local_time = get_local_time(magtag, errors)
 
     # Read all the sensors.
-    temperature_cool = safe_read(sht_cool, "temperature", errors)
-    humidity_cool = safe_read(sht_cool, "relative_humidity", errors)
-    temperature_warm = safe_read(sht_warm, "temperature", errors)
-    humidity_warm = safe_read(sht_warm, "relative_humidity", errors)
-    temperature_basking = safe_read(mlx, "object_temperature", errors)
+    temperature_cool = safe_read(sht_cool, "sht_cool", "temperature", errors)
+    humidity_cool = safe_read(sht_cool, "sht_cool", "relative_humidity", errors)
+    temperature_warm = safe_read(sht_warm, "sht_warm", "temperature", errors)
+    humidity_warm = safe_read(sht_warm, "sht_warm", "relative_humidity", errors)
+    temperature_basking = safe_read(mlx, "mlx", "object_temperature", errors)
     uv_index = guva.uv_index
     battery = percentage(magtag.peripherals.battery)
 
@@ -315,7 +321,7 @@ try:
     update_text(magtag, 2, temperature_warm, "{:4.1f}C", "--.-C")
     update_text(magtag, 3, humidity_warm, "{:2.0f}%", "--%")
     update_text(magtag, 4, temperature_basking, "{:4.1f}C", "--.-C")
-    update_text(magtag, 5, uv_index, "{:4.2f}" "-.--")
+    update_text(magtag, 5, uv_index, "{:4.2f}", "-.--")
     update_text(magtag, 6, local_time, "Last update: {}", "Last update: XXXX-XX-XX XX:XX:XX",
                 refresh=True)
     print("Display updated")
