@@ -327,8 +327,15 @@ try:
     print("Display updated")
 
 except Exception as err:
-    # Unhandled exception. Just send it out the serial port and carry on to sleep.
+    # Unhandled exception. Just send it out the serial port, put it on the display,
+    # and carry on to sleep.
     print("Exception: {}".format(err))
+    magtag.add_text(text_position=(1, 1),
+                    text_anchor=(0, 0),
+                    text_font=STATUS_FONT,
+                    text_wrap=len("Last update: XXXX-XX-XX XX:XX:XX") + 1,
+                    text=str(err))
+    magtag.refresh()
 
 finally:
     # Go into a deep sleep and run again regardles.
